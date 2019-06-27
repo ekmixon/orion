@@ -1,27 +1,22 @@
-#!/bin/bash -ex
+#!/usr/bin/env bash
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-function retry {
-  # shellcheck disable=SC2015
-  for _ in {1..9}; do
-    "$@" && return || sleep 30
-  done
-  "$@"
-}
+set -e
+set -x
+
+cd "$HOME"
+
+# shellcheck disable=SC1090
+source ~/.common.sh
 
 eval "$(ssh-agent -s)"
 mkdir -p .ssh
 retry ssh-keyscan github.com >> .ssh/known_hosts
 
 # Get AWS credentials for GCE to be able to read from Credstash
-if curl --connect-timeout 2 --retry 2 -sf -H "Metadata-Flavor: Google" http://169.254.169.254/computeMetadata/v1/>/dev/null
-then
-  mkdir -p .aws
-  retry berglas access fuzzmanager-cluster-secrets/credstash-aws-auth > .aws/credentials
-  chmod 0600 .aws/credentials
-fi
+setup-aws-credentials "$EC2SPOTMANAGER_PROVIDER"
 
 # Get deployment keys from credstash
 retry credstash get deploy-grizzly-config.pem > .ssh/id_ecdsa.grizzly_config
