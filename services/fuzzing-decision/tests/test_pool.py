@@ -636,7 +636,7 @@ def test_preprocess_tasks():
         assert expires == _get_date(
             task["payload"]["artifacts"]["project/fuzzing/private/logs"].pop("expires")
         )
-        assert set(task["scopes"]) == set(["secrets:get:project/fuzzing/decision"])
+        assert set(task["scopes"]) == {"secrets:get:project/fuzzing/decision"}
         # scopes are already asserted above
         # - read the value for comparison instead of deleting the key, so the object is
         #   printed in full on failure
@@ -709,6 +709,7 @@ def test_flatten(pool_path):
 
 
 def test_pool_map():
+
     class PoolConfigNoFlatten(CommonPoolConfiguration):
         def _flatten(self, _):
             pass
@@ -732,7 +733,7 @@ def test_pool_map():
     assert cfg_map.platform == expect.platform
     assert cfg_map.preprocess is None
     assert cfg_map.schedule_start == expect.schedule_start
-    assert set(cfg_map.scopes) == set()
+    assert not set(cfg_map.scopes)
     assert cfg_map.tasks is None
 
     pools = list(cfg_map.iterpools())

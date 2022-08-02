@@ -45,11 +45,13 @@ COMMON_FIELD_TYPES = types.MappingProxyType(
 # fields that must exist in every pool.yml
 COMMON_REQUIRED_FIELDS = frozenset(("name",))
 POOL_CONFIG_FIELD_TYPES = types.MappingProxyType(
-    {k: v for k, v in itertools.chain(COMMON_FIELD_TYPES.items(), [("parents", list)])}
+    dict(itertools.chain(COMMON_FIELD_TYPES.items(), [("parents", list)]))
 )
+
 POOL_MAP_FIELD_TYPES = types.MappingProxyType(
-    {k: v for k, v in itertools.chain(COMMON_FIELD_TYPES.items(), [("apply_to", list)])}
+    dict(itertools.chain(COMMON_FIELD_TYPES.items(), [("apply_to", list)]))
 )
+
 POOL_MAP_REQUIRED_FIELDS = frozenset(COMMON_REQUIRED_FIELDS | {"apply_to"})
 CPU_ALIASES = types.MappingProxyType(
     {
@@ -76,14 +78,15 @@ def parse_size(size):
     """
     match = re.match(r"\s*(\d+\.\d*|\.\d+|\d+)\s*([kmgt]?)b?\s*", size, re.IGNORECASE)
     assert match is not None, "size should be a number followed by optional si prefix"
-    result = float(match.group(1))
+    result = float(match[1])
     multiplier = {
         "": 1,
         "k": 1024,
         "m": 1024 * 1024,
         "g": 1024 * 1024 * 1024,
         "t": 1024 * 1024 * 1024 * 1024,
-    }[match.group(2).lower()]
+    }[match[2].lower()]
+
     return result * multiplier
 
 
@@ -101,21 +104,22 @@ def parse_time(time):
     while time:
         match = re.match(r"\s*(\d+)\s*([wdhms]?)\s*(.*)", time, re.IGNORECASE)
         assert match is not None, "time should be a number followed by optional unit"
-        if match.group(2):
+        if match[2]:
             multiplier = {
                 "w": 7 * 24 * 60 * 60,
                 "d": 24 * 60 * 60,
                 "h": 60 * 60,
                 "m": 60,
                 "s": 1,
-            }[match.group(2).lower()]
+            }[match[2].lower()]
+
         else:
-            assert not match.group(3), "trailing data"
+            assert not match[3], "trailing data"
             assert not got_anything, "multipart time must specify all units"
             multiplier = 1
         got_anything = True
-        result += int(match.group(1)) * multiplier
-        time = match.group(3)
+        result += int(match[1]) * multiplier
+        time = match[3]
     assert got_anything, "no time could be parsed"
     return result
 
@@ -171,9 +175,8 @@ class MachineTypes:
             if (
                 spec["cpu"] == min_cpu
                 and (spec["ram"] / spec["cpu"]) >= min_ram_per_cpu
-            ):
-                if not metal or (metal and spec.get("metal", False)):
-                    yield name
+            ) and (not metal or (metal and spec.get("metal", False))):
+                yield name
 
 
 class CommonPoolConfiguration(abc.ABC):
@@ -304,10 +307,7 @@ class CommonPoolConfiguration(abc.ABC):
 
         # list fields
         # command is an overwriting field, null is allowed
-        if data.get("command") is not None:
-            self.command = data["command"].copy()
-        else:
-            self.command = None
+        self.command = None if data.get("command") is None else data["command"].copy()
         self.scopes = data.get("scopes", []).copy()
 
         # size fields
@@ -341,9 +341,7 @@ class CommonPoolConfiguration(abc.ABC):
             self.cpu = cpu
         self.cloud = None
         if data.get("cloud") is not None:
-            assert data["cloud"] in PROVIDERS, "Invalid cloud - use {}".format(
-                ",".join(PROVIDERS)
-            )
+            assert data["cloud"] in PROVIDERS, f'Invalid cloud - use {",".join(PROVIDERS)}'
             self.cloud = data["cloud"]
 
     @classmethod
@@ -489,7 +487,7 @@ class PoolConfiguration(CommonPoolConfiguration):
         if not self.preprocess:
             return None
         data = yaml.safe_load((self.base_dir / f"{self.preprocess}.yml").read_text())
-        pool_id = self.pool_id + "/preprocess"
+        pool_id = f"{self.pool_id}/preprocess"
         assert data["tasks"] == 1 or (
             self.tasks == 1 and data["tasks"] is None
         ), f"{self.preprocess} must set tasks = 1"

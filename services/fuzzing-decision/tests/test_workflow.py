@@ -41,7 +41,7 @@ def test_patterns(tmp_path):
     ]
 
     def _match(test):
-        return any([re.match(pattern, test) for pattern in patterns])
+        return any(re.match(pattern, test) for pattern in patterns)
 
     # Check all fuzzing hooks are managed
     assert not _match("Hook=project-another/something")

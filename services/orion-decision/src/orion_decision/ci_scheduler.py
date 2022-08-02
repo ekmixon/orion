@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 """Scheduler for CI tasks"""
+
 from itertools import chain
 from json import dumps as json_dump
 from logging import getLogger
@@ -28,12 +29,9 @@ from .git import GithubEvent
 
 LOG = getLogger(__name__)
 TEMPLATE_PATH = (Path(__file__).parent / "task_templates").resolve()
-TEMPLATES = {}
-TEMPLATES["linux"] = Template((TEMPLATE_PATH / "ci-linux.yaml").read_text())
+TEMPLATES = {"linux": Template((TEMPLATE_PATH / "ci-linux.yaml").read_text())}
 TEMPLATES["windows"] = Template((TEMPLATE_PATH / "ci-windows.yaml").read_text())
-WORKER_TYPES = {}
-WORKER_TYPES["linux"] = WORKER_TYPE
-WORKER_TYPES["windows"] = WORKER_TYPE_MSYS
+WORKER_TYPES = {"linux": WORKER_TYPE, "windows": WORKER_TYPE_MSYS}
 
 
 class CIScheduler:
@@ -82,7 +80,7 @@ class CIScheduler:
         """
         job_tasks = {id(job): slugId() for job in self.matrix.jobs}
         prev_stage = []
-        for stage in sorted(set(job.stage for job in self.matrix.jobs)):
+        for stage in sorted({job.stage for job in self.matrix.jobs}):
             this_stage = []
             for job in self.matrix.jobs:
                 if job.stage != stage:

@@ -107,10 +107,7 @@ class MatrixJob:
         self.language = language
         self.version = version
         self.platform = platform
-        if name is None:
-            self.name = f"{language}/{platform}/{version}"
-        else:
-            self.name = name
+        self.name = f"{language}/{platform}/{version}" if name is None else name
         self.env = env
         self.script = script
         self.stage = stage
@@ -183,10 +180,7 @@ class MatrixJob:
         Returns:
             MatrixJob: Job object.
         """
-        if isinstance(data, dict):
-            obj = data
-        else:
-            obj = json_loads(data)
+        obj = data if isinstance(data, dict) else json_loads(data)
         _validate_schema_by_name(instance=obj, name="MatrixJob")
         result = cls(
             obj["name"],
@@ -356,10 +350,7 @@ class CISecret(ABC):
         Returns:
             CISecret: Secret object.
         """
-        if isinstance(data, dict):
-            obj = data
-        else:
-            obj = json_loads(data)  # pragma: no cover
+        obj = data if isinstance(data, dict) else json_loads(data)
         _validate_schema_by_name(instance=obj, name="CISecret")
         if obj["type"] == "env":
             return CISecretEnv(obj["secret"], obj["name"], key=obj.get("key"))

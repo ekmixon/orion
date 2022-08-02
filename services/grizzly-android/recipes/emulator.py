@@ -55,7 +55,7 @@ class AndroidSDKRepo(object):
 
     def __init__(self, url):
         parts = urlparse(url)
-        self.url_base = parts.scheme + "://" + parts.netloc + os.path.dirname(parts.path)
+        self.url_base = f"{parts.scheme}://{parts.netloc}{os.path.dirname(parts.path)}"
         xml_string = requests.get(url).content
         LOG.info("Downloaded manifest: %s (%sB)", url, si(len(xml_string)))
         self.root = xml.etree.ElementTree.fromstring(xml_string)
@@ -105,7 +105,7 @@ class AndroidSDKRepo(object):
         try:
             downloaded = 0
             with open(ziptmp, "wb") as zipf:
-                response = requests.get(self.url_base + "/" + url.text, stream=True)
+                response = requests.get(f"{self.url_base}/{url.text}", stream=True)
                 total_size = int(response.headers["Content-Length"])
                 start_time = report_time = time.time()
                 LOG.info("Downloading package: %s (%sB total)", url.text, si(total_size))
@@ -205,24 +205,24 @@ class AndroidHelper(object):
         api_gapi = os.path.join(sdk, "system-images", "android-29", "default")
 
         # create an avd
-        avd_ini = os.path.join(avd_path, self.avd_name + ".ini")
+        avd_ini = os.path.join(avd_path, f"{self.avd_name}.ini")
         assert not os.path.isfile(avd_ini), "File exists %r" % avd_ini
-        avd_dir = os.path.join(avd_path, self.avd_name + ".avd")
+        avd_dir = os.path.join(avd_path, f"{self.avd_name}.avd")
         os.mkdir(avd_dir)
 
         with open(avd_ini, "w") as fp:
             print("avd.ini.encoding=UTF-8", file=fp)
-            print("path=" + avd_dir, file=fp)
-            print("path.rel=avd/" + self.avd_name + ".avd", file=fp)
+            print(f"path={avd_dir}", file=fp)
+            print(f"path.rel=avd/{self.avd_name}.avd", file=fp)
             print("target=android-28", file=fp)
 
         avd_cfg = os.path.join(avd_dir, "config.ini")
         assert not os.path.isfile(avd_cfg), "File exists %r" % avd_cfg
         with open(avd_cfg, "w") as fp:
-            print("AvdId=" + self.avd_name, file=fp)
+            print(f"AvdId={self.avd_name}", file=fp)
             print("PlayStore.enabled=false", file=fp)
             print("abi.type=x86_64", file=fp)
-            print("avd.ini.displayname=" + self.avd_name, file=fp)
+            print(f"avd.ini.displayname={self.avd_name}", file=fp)
             print("avd.ini.encoding=UTF-8", file=fp)
             print("disk.dataPartition.size=5000M", file=fp)
             print("fastboot.forceColdBoot=no", file=fp)
@@ -269,9 +269,9 @@ class AndroidHelper(object):
 
         sdcard = os.path.join(avd_dir, "sdcard.img")
         mksd = os.path.join(sdk, "emulator", "mksdcard")
-        assert os.path.isfile(mksd), "Missing %s" % mksd
+        assert os.path.isfile(mksd), f"Missing {mksd}"
         subprocess.check_output([mksd, "%dM" % (self.sdcard_size,), sdcard])
-        shutil.copy(sdcard, sdcard + ".firstboot")
+        shutil.copy(sdcard, f"{sdcard}.firstboot")
 
     def emulator_run(self, use_snapshot, quiet=True):
         # create folder structure
@@ -279,7 +279,7 @@ class AndroidHelper(object):
         avd_home = makedirs(HOME, ".android")
         sdk = makedirs(android, "Sdk")
         avd_path = makedirs(avd_home, "avd")
-        avd_dir = os.path.join(avd_path, self.avd_name + ".avd")
+        avd_dir = os.path.join(avd_path, f"{self.avd_name}.avd")
         emulator_bin = os.path.join(sdk, "emulator", "emulator")
 
         args = ["-selinux", "permissive"]
@@ -298,21 +298,16 @@ class AndroidHelper(object):
 
             # replace sdcard with firstboot version if exists
             sdcard = os.path.join(avd_dir, "sdcard.img")
-            if os.path.isfile(sdcard + ".firstboot"):
+            if os.path.isfile(f"{sdcard}.firstboot"):
                 if os.path.isfile(sdcard):
                     os.unlink(sdcard)
-                shutil.copy(sdcard + ".firstboot", sdcard)
+                shutil.copy(f"{sdcard}.firstboot", sdcard)
 
         if self.writable:
             args.append("-writable-system")
 
-        args.extend(("-port", "%d" % (self.android_port,)))
-        args.append("@" + self.avd_name)
-
-        output = None
-        if quiet:
-            output = subprocess.DEVNULL
-
+        args.extend(("-port", "%d" % (self.android_port,), f"@{self.avd_name}"))
+        output = subprocess.DEVNULL if quiet else None
         result = subprocess.Popen([emulator_bin] + args, stderr=output, stdout=output)
         try:
             time.sleep(5)
@@ -330,7 +325,7 @@ class AndroidHelper(object):
         sdk = makedirs(android, "Sdk")
         avd_home = makedirs(HOME, ".android")
         avd_path = makedirs(avd_home, "avd")
-        avd_dir = os.path.join(avd_path, self.avd_name + ".avd")
+        avd_dir = os.path.join(avd_path, f"{self.avd_name}.avd")
         sdcard = os.path.join(avd_dir, "sdcard.img")
         emulator_bin = os.path.join(sdk, "emulator", "emulator")
 
@@ -348,9 +343,9 @@ class AndroidHelper(object):
 
         proc.terminate()
         proc.wait()
-        if os.path.isfile(sdcard + ".firstboot"):
-            os.unlink(sdcard + ".firstboot")
-        shutil.copy(sdcard, sdcard + ".firstboot")
+        if os.path.isfile(f"{sdcard}.firstboot"):
+            os.unlink(f"{sdcard}.firstboot")
+        shutil.copy(sdcard, f"{sdcard}.firstboot")
 
         LOG.info("All done. Try running: `%s @%s`", emulator_bin, self.avd_name)
 

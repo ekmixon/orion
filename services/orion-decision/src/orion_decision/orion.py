@@ -88,12 +88,10 @@ class ServiceTest(ABC):
         """
         LOG.debug("got fields %r", cls.FIELDS)
         given_fields = frozenset(defn)
-        missing = list(cls.FIELDS - given_fields)
-        if missing:
+        if missing := list(cls.FIELDS - given_fields):
             raise RuntimeError(f"Missing test fields: '{missing!r}'")
         if check_unknown:
-            extra = list(given_fields - cls.FIELDS)
-            if extra:
+            if extra := list(given_fields - cls.FIELDS):
                 raise RuntimeError(f"Unknown test fields: '{extra!r}'")
 
     @staticmethod
@@ -294,7 +292,7 @@ class Recipe:
         """
         self.file = file
         self.service_deps = set()
-        self.path_deps = set([file])
+        self.path_deps = {file}
         self.recipe_deps = set()
         self.weak_deps = set()
         self.dirty = False

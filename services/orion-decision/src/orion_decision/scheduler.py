@@ -290,15 +290,11 @@ class Scheduler:
 
     @property
     def _create_str(self):
-        if self.dry_run:
-            return "Would create"
-        return "Creating"
+        return "Would create" if self.dry_run else "Creating"
 
     @property
     def _created_str(self):
-        if self.dry_run:
-            return "Would create"
-        return "Created"
+        return "Would create" if self.dry_run else "Created"
 
     def create_tasks(self):
         """Create test/build/push tasks in Taskcluster.

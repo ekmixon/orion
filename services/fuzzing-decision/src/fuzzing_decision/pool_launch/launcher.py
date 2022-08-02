@@ -88,9 +88,9 @@ class PoolLauncher(Workflow):
                     )
 
                 result = os.dup2(log.fileno(), 1)
-                assert result != -1, "dup2 failed: " + os.strerror(get_errno())
+                assert result != -1, f"dup2 failed: {os.strerror(get_errno())}"
                 result = os.dup2(log.fileno(), 2)
-                assert result != -1, "dup2 failed: " + os.strerror(get_errno())
+                assert result != -1, f"dup2 failed: {os.strerror(get_errno())}"
         else:
             sys.stdout.flush()
             sys.stderr.flush()

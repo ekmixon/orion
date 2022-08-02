@@ -39,12 +39,12 @@ class RemoteWait:
     def new(self):
         self.token = str(uuid.uuid4())
         TOKEN_PATH.mkdir(exist_ok=True)
-        with fasteners.InterProcessLock(str(self._token_file) + ".lck"):
+        with fasteners.InterProcessLock(f"{str(self._token_file)}.lck"):
             assert not self._token_file.is_file()
             self._token_file.write_text(json.dumps({"state": "new"}))
 
     def run(self, cmd):
-        with fasteners.InterProcessLock(str(self._token_file) + ".lck"):
+        with fasteners.InterProcessLock(f"{str(self._token_file)}.lck"):
             data = json.loads(self._token_file.read_text())
             assert data["state"] == "new"
             try:
@@ -58,7 +58,7 @@ class RemoteWait:
             data["pid"] = proc.pid
             self._token_file.write_text(json.dumps(data))
         result = proc.wait()
-        with fasteners.InterProcessLock(str(self._token_file) + ".lck"):
+        with fasteners.InterProcessLock(f"{str(self._token_file)}.lck"):
             data["state"] = "done"
             data["result"] = result
             self._token_file.write_text(json.dumps(data))
@@ -67,7 +67,7 @@ class RemoteWait:
     def poll(self):
         """Return 0 while program is pre-run or running, 1 if program is exited
         """
-        with fasteners.InterProcessLock(str(self._token_file) + ".lck"):
+        with fasteners.InterProcessLock(f"{str(self._token_file)}.lck"):
             data = json.loads(self._token_file.read_text())
         return 0 if data["state"] in {"new", "running"} else 1
 
@@ -76,7 +76,7 @@ class RemoteWait:
         """
         is_pid1 = (os.getpid() == 1)
         while True:
-            with fasteners.InterProcessLock(str(self._token_file) + ".lck"):
+            with fasteners.InterProcessLock(f"{str(self._token_file)}.lck"):
                 data = json.loads(self._token_file.read_text())
             if data["state"] == "done":
                 break
@@ -90,9 +90,9 @@ class RemoteWait:
     def delete(self):
         """Remove resources used by the token.
         """
-        with fasteners.InterProcessLock(str(self._token_file) + ".lck"):
+        with fasteners.InterProcessLock(f"{str(self._token_file)}.lck"):
             self._token_file.unlink()
-        (self._token_file.parent / (self._token_file.stem + ".lck")).unlink()
+        (self._token_file.parent / f"{self._token_file.stem}.lck").unlink()
 
     def __str__(self):
         return self.token

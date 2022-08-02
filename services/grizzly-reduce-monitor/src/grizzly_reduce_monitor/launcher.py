@@ -42,9 +42,9 @@ class PrivateLogLauncher(ReductionWorkflow):
         # not sure if the assertions would print
         with (self.log_dir / "live.log").open("w") as log:
             result = os.dup2(log.fileno(), 1)
-            assert result != -1, "dup2 failed: " + os.strerror(ctypes.get_errno())
+            assert result != -1, f"dup2 failed: {os.strerror(ctypes.get_errno())}"
             result = os.dup2(log.fileno(), 2)
-            assert result != -1, "dup2 failed: " + os.strerror(ctypes.get_errno())
+            assert result != -1, f"dup2 failed: {os.strerror(ctypes.get_errno())}"
 
         os.execvpe(self.command[0], self.command, self.environment)
 
