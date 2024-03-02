@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-FROM python:3.6-slim
+FROM python:3.13.0a4-slim
 
 LABEL maintainer Jesse Schwartzentruber <truber@mozilla.com>
 
